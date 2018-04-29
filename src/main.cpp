@@ -15,6 +15,7 @@
 #define PASS "password"
 #define MQTT_ID "ESP_SENSOR_XX"
 #define MQTT_SERVER "192.168.1.165"
+
 #define MQTT_MAX_MESSAGE_SIZE 50
 #define MAX_SAMPLE_RATE 2000
 #define HW_UART_SPEED 9600L
@@ -23,8 +24,6 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <WEMOS_SHT3X.h>
-
 
 #define LOG_PRINTFLN(fmt, ...) logfln(fmt, ##__VA_ARGS__)
 #define LOG_SIZE_MAX 128
@@ -38,18 +37,23 @@ void logfln(const char *fmt, ...)
     Serial.println(buf);
 }
 
-//setup some globals
-SHT3X sht30(0x45);
+//basics needed or all configs
 WiFiClient espClient;
 PubSubClient client(espClient);
 long lastSample = 0;
 
+//temperature
+#ifdef TEMP_SENSOR
+#include <WEMOS_SHT3X.h>
+SHT3X sht30(0x45);
+#endif
+
 //setup topics
-const char *topics[3] = {
+const char *topics[4] = {
     MQTT_ID "/ip",
     MQTT_ID "/temperature",
-    MQTT_ID "/humidity"
-};
+    MQTT_ID "/humidity",
+    MQTT_ID "/button/0"};
 char topics_cache[sizeof(topics)][MQTT_MAX_MESSAGE_SIZE];
 
 void setup_wifi()
@@ -83,7 +87,7 @@ void publish(const int topic_id, const char *message)
 
 void publish_if_changed(const int topic_id, const char *message)
 {
-    LOG_PRINTFLN("comparing %s:%s", message, topics_cache[topic_id]);
+    //LOG_PRINTFLN("comparing %s:%s", message, topics_cache[topic_id]);
     //compare the strings see if they are equal
     if (strcmp(message, topics_cache[topic_id]) != 0)
     {
@@ -94,15 +98,21 @@ void publish_if_changed(const int topic_id, const char *message)
     }
     else
     {
-        LOG_PRINTFLN("value for %s unchanged", topics[topic_id]);
+        //LOG_PRINTFLN("value for %s unchanged", topics[topic_id]);
     }
 }
 
-void publish_if_changed(const int topic_id, const float value){
+void publish_if_changed(const int topic_id, const float value)
+{
     //take only 5 chars. This will give numbers like XX.X when including null terminator
     char buffer[5];
-    snprintf(buffer, sizeof(buffer), "%f",value);
+    snprintf(buffer, sizeof(buffer), "%f", value);
     publish_if_changed(topic_id, buffer);
+}
+
+void publish_if_changed(const int topic_id, const bool value)
+{
+    publish_if_changed(topic_id, value ? "1" : "0");
 }
 
 void reconnect()
@@ -120,7 +130,8 @@ void reconnect()
         {
             LOG_PRINTFLN("MQTT failed sate: %i", client.state());
             //check to see if wifi got killed also
-            if(WiFi.status() != WL_CONNECTED){
+            if (WiFi.status() != WL_CONNECTED)
+            {
                 LOG_PRINTFLN("WIFI connection failed restarting...");
                 //reset and start again
                 ESP.reset();
@@ -149,6 +160,12 @@ void setup()
     Serial.begin(HW_UART_SPEED);
     while (!Serial)
         ;
+//door & window
+#ifdef DOOR_SENSOR
+    LOG_PRINTFLN("Door sensor configured on pin %i", D8);
+    pinMode(D8, INPUT);
+    pinMode(D7, OUTPUT);
+#endif
     setup_wifi();
     client.setServer(MQTT_SERVER, 1883);
     client.setCallback(callback);
@@ -161,15 +178,16 @@ void loop()
     {
         reconnect();
     }
-  
+
     client.loop();
 
     if (sample())
     {
+#ifdef TEMP_SENSOR
         if (sht30.get() == 0)
         {
             //we only are intrested in publishing changes so...
-    
+
             publish_if_changed(1, sht30.cTemp);
             publish_if_changed(2, sht30.humidity);
         }
@@ -177,5 +195,12 @@ void loop()
         {
             LOG_PRINTFLN("sht30 read failed");
         }
+#endif
+
+#ifdef DOOR_SENSOR
+        //NB this only works well for switches that are open/closed for a long time like the magnetic door switch
+        digitalWrite(D7, HIGH);
+        publish_if_changed(3, digitalRead(D8) == HIGH);
+#endif
     }
 }

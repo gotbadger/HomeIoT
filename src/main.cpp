@@ -11,35 +11,20 @@
  */
 
 // set details here
-#define NET "network_name"
-#define PASS "password"
-#define MQTT_ID "ESP_SENSOR_XX"
-#define MQTT_SERVER "192.168.1.165"
-
-#define MQTT_MAX_MESSAGE_SIZE 50
-#define MAX_SAMPLE_RATE 2000
-#define HW_UART_SPEED 9600L
+#include "config.h"
 
 // Include library
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-
-#define LOG_PRINTFLN(fmt, ...) logfln(fmt, ##__VA_ARGS__)
-#define LOG_SIZE_MAX 128
-void logfln(const char *fmt, ...)
-{
-    char buf[LOG_SIZE_MAX];
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(buf, LOG_SIZE_MAX, fmt, ap);
-    va_end(ap);
-    Serial.println(buf);
-}
+#include "log.h"
+#include "mqtt.h"
 
 //basics needed or all configs
 WiFiClient espClient;
 PubSubClient client(espClient);
+Mqtt mqtt(client);
+
 long lastSample = 0;
 
 //temperature
@@ -49,12 +34,12 @@ SHT3X sht30(0x45);
 #endif
 
 //setup topics
-const char *topics[4] = {
+static const char *topics[4] = {
     MQTT_ID "/ip",
     MQTT_ID "/temperature",
     MQTT_ID "/humidity",
     MQTT_ID "/button/0"};
-char topics_cache[sizeof(topics)][MQTT_MAX_MESSAGE_SIZE];
+static char topics_cache[sizeof(topics)][MQTT_MAX_MESSAGE_SIZE];
 
 void setup_wifi()
 {
@@ -81,8 +66,9 @@ void callback(char *topic, byte *payload, unsigned int length)
 
 void publish(const int topic_id, const char *message)
 {
-    LOG_PRINTFLN("%s %s", topics[topic_id], message);
-    client.publish(topics[topic_id], message);
+    mqtt.publish(topic_id, message);
+    // LOG_PRINTFLN("%s %s", topics[topic_id], message);
+    // client.publish(topics[topic_id], message);
 }
 
 void publish_if_changed(const int topic_id, const char *message)

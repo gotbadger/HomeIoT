@@ -37,5 +37,8 @@ sensor:
 - Connect RST to D0 this will allow the board to wake up from deep sleep
 - Print case (you may need to modify the stl if your usb cable has a very thick plug)
 
-
+#### Complete
+![both boards](https://raw.githubusercontent.com/gotbadger/HomeIoT/master/case/sht30/assembled.jpg)
+#### With Case
+![with case](https://raw.githubusercontent.com/gotbadger/HomeIoT/master/case/sht30/case.jpg)
 

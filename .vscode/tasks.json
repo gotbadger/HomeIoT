@@ -15,34 +15,6 @@
             "problemMatcher": [
                 "$platformio"
             ]
-        },
-        {
-            "type": "PlatformIO",
-            "args": [
-                "run",
-                "--target",
-                "upload",
-                "--environment",
-                "d1_mini_door"
-            ],
-            "problemMatcher": [
-                "$platformio"
-            ]
-        },
-        {
-            "type": "PlatformIO",
-            "args": [
-                "run",
-                "--target",
-                "upload",
-                "--target",
-                "monitor",
-                "--environment",
-                "d1_mini_door"
-            ],
-            "problemMatcher": [
-                "$platformio"
-            ]
         }
     ]
 }

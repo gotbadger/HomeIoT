@@ -8,6 +8,23 @@ This is a small project to add IoT sensor data to [Home Assistant](https://www.h
 - Based off wemos dev boards.
 - Cases for 3d printing
 
+### Home Assistant setup
+For example for a sensor named `ESP_SENSOR_11` add the following to your `configuration.yaml`
+
+```yaml
+sensor:
+- name: ESP_SENSOR_11 temperature
+  platform: mqtt
+  device_class: temperature
+  state_topic: ESP_SENSOR_11/temperature
+  unit_of_measurement: °C
+- name: ESP_SENSOR_11 humidity
+  platform: mqtt
+  device_class: humidity
+  state_topic: ESP_SENSOR_11/humidity
+ unit_of_measurement: '%'
+```
+
 ## Temp/Humidity (SHT30)
 | Part | Name | Source |
 | ---- | ---- | -------|

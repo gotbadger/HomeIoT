@@ -2,6 +2,9 @@
 
 This is a small project to add IoT sensor data to [Home Assistant](https://www.home-assistant.io/) utilising cheap ESP8266 modules
 
+# Project Archived
+Software side is now more easily covered by [ESP Home](https://esphome.io/components/sensor/sht3xd.html)
+
 ## Features
 - Deep sleep so the board does not heat up and effect sensor readings.
 - MQTT to send data.
